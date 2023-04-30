@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "chart.js": "^4.3.0",
+    "csv-parser": "^3.0.0",
+    "node-fetch": "^3.3.1"
+  }
+}
