@@ -10,9 +10,9 @@ const createCsvWriter = createObjectCsvWriter;
     const writeApi = new InfluxDB({ url: 'http://64.226.117.91:8086', token: '32KaIOSNxXgcOzzDenFMfX34DeJlVVbzkGL9Nv0PIhCCJP5T9iIqoX8EaY4hE_LunHRh3f2k25ntm1k6lCHA2w==' }).getWriteApi('zoo', 'zoo');
 
     const fluxQuery = 'from(bucket: "zoo")\
-      |> range(start: -2m)\
+      |> range(start: -1m)\
       |> filter(fn: (r) => r["_measurement"] == "beacon")\
-      |> filter(fn: (r) => r["beacon_id"] == "BC5729031381")\
+      |> filter(fn: (r) => r["beacon_id"] == "BC572903137A")\
       |> filter(fn: (r) => r["_field"] == "rssi")\
       |> drop(columns: ["_measurement", "_start", "_stop"])'
 
@@ -38,6 +38,8 @@ const createCsvWriter = createObjectCsvWriter;
 
     const position = calculatePosition(rssi0["94A408B2EE24"], rssi1["94A408B60B80"], rssi2["94A408B60BAC"]);
 
+    console.log(position);
+    /*
     const point = new Point('position')
     point.floatField('94A408B2EE24', position.d1)
     point.floatField('94A408B60B80', position.d2)
@@ -45,12 +47,12 @@ const createCsvWriter = createObjectCsvWriter;
     point.floatField('x', position.x)
     point.floatField('y', position.y)
     point.tag('beacon_id', 'BC5729031381')
-    console.log(point)
+    //console.log(point)
     writeApi.writePoint(point)
-    await writeApi.close()
+    await writeApi.close()*/
   }
 
-  setInterval(get, 4000)
+  setInterval(get, 3500)
 })()
 
 
@@ -66,6 +68,7 @@ function processData(data) {
   dataArray[gatewayCounter].push(parseInt(rssi[0]));
   // TODO: array kedua perlu dibuat jadi dinamis
 
+  console.log(gateway.length)
   for (let i = 1; i < gateway.length; i++) {
     if (gateway[i] == gateway[i - 1]) {
       if (dataArray[gatewayCounter].length < limit + 1) {
@@ -83,7 +86,7 @@ function processData(data) {
 
   //console.log(dataArray);
 
-  const windowSize = 20; // set the window size for the moving average
+  const windowSize = 25; // set the window size for the moving average
   const maArray = []; // initialize an empty array to store the moving average values
   let index = 0;
 
@@ -116,15 +119,20 @@ function processData(data) {
 }
 
 function calculatePosition(rssi1, rssi2, rssi3) {
+  console.log("rssi1:" + rssi1 + " rssi2:" + rssi2 + " rssi3:" + rssi3)
   const d1 = rssiToDistance0(rssi1);
   const d2 = rssiToDistance1(rssi2);
   const d3 = rssiToDistance2(rssi3);
   // console.log(d1, d2, d3);
 
   // Find the position of the target device using trilateration
-  const x1 = 2.43, y1 = 0; // position of the first reference point
-  const x2 = 0, y2 = 3.82; // position of the second reference point
-  const x3 = 7.24, y3 = 5.66; // position of the third reference point
+  //const x1 = 2.43, y1 = 0; // position of the first reference point
+  //const x2 = 0, y2 = 3.82; // position of the second reference point
+  //const x3 = 7.24, y3 = 5.66; // position of the third reference point
+    // Find the position of the target device using trilateration
+    const x1 = 10, y1 = 0; // position of the first reference point
+    const x2 = 5, y2 = 0; // position of the second reference point
+    const x3 = 0, y3 = 0; // position of the third reference point
 
   // Calculate the coefficients of a system of equations to solve for the x and y coordinates of the target device
   const A = 2 * x2 - 2 * x1;
@@ -135,31 +143,35 @@ function calculatePosition(rssi1, rssi2, rssi3) {
   const F = d2 * d2 - d3 * d3 - x2 * x2 + x3 * x3 - y2 * y2 + y3 * y3;
 
   // Solve for the x and y coordinates of the target device
-  const x = (C * E - F * B) / (E * A - B * D);
-  const y = (C * D - A * F) / (B * D - A * E);
+  //const x = (C * E - F * B) / (E * A - B * D);
+  //const y = (C * D - A * F) / (B * D - A * E);
+
+
+  const panjang = ((d2+d3)/2) + d1
+  const konstanta = 10 / panjang
+  const x = ((d2+d3)/2) * konstanta
+  const y = 0
 
   return { x, y, d1, d2, d3 };
 }
 
 function rssiToDistance0(rssi) {
-  const txPower = -61.3; // transmit power of the beacon (in dBm)
-  const n = 2.3; // path loss exponent (varies depending on the environment)
+  const txPower = -50.7//-64;//-61.3; // transmit power of the beacon (in dBm)
+  const n = 3; // path loss exponent (varies depending on the environment)
   const distance = Math.pow(10, (txPower - rssi) / (10 * n));
   return distance;
 }
 
 function rssiToDistance1(rssi) {
-  const txPower = -65; // transmit power of the beacon (in dBm)
+  const txPower = -60; // transmit power of the beacon (in dBm)
   const n = 2; // path loss exponent (varies depending on the environment)
   const distance = Math.pow(10, (txPower - rssi) / (10 * n));
   return distance;
 }
 
 function rssiToDistance2(rssi) {
-  const txPower = -59.7; // transmit power of the beacon (in dBm)
-  const n = 2.4; // path loss exponent (varies depending on the environment)
+  const txPower = -54; // transmit power of the beacon (in dBm)
+  const n = 2; // path loss exponent (varies depending on the environment)
   const distance = Math.pow(10, (txPower - rssi) / (10 * n));
   return distance;
 }
-//const position = calculatePosition(-70, -80, -90);
-//console.log(position); // { x: 2.273684210526316, y: 1.0535087719298245 }
