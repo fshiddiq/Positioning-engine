@@ -39,7 +39,7 @@ const createCsvWriter = createObjectCsvWriter;
     const position = calculatePosition(rssi0["94A408B2EE24"], rssi1["94A408B60B80"], rssi2["94A408B60BAC"]);
 
     console.log(position);
-    /*
+    
     const point = new Point('position')
     point.floatField('94A408B2EE24', position.d1)
     point.floatField('94A408B60B80', position.d2)
@@ -49,7 +49,7 @@ const createCsvWriter = createObjectCsvWriter;
     point.tag('beacon_id', 'BC5729031381')
     //console.log(point)
     writeApi.writePoint(point)
-    await writeApi.close()*/
+    await writeApi.close()
   }
 
   setInterval(get, 3500)
